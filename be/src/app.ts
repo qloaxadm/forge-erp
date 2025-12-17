@@ -1,61 +1,61 @@
 import express from "express";
 import cors from "cors";
-import "./config/db"; // 🔥 THIS LINE IS MANDATORY
 import { db } from "./config/db";
+import masterRoutes from "./routes/master.routes";
+import pricingRoutes from "./routes/pricing.routes";
+import { errorMiddleware } from "./middleware/error.middleware";
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// Enable CORS with specific options if needed
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-app.get("/health", async (_req, res) => {
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Logging middleware for development
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Request body:', req.body);
+  }
+  next();
+});
+
+app.use("/api", masterRoutes);
+app.use("/api", pricingRoutes);
+
+app.use(errorMiddleware);
+/**
+ * Health check (no DB)
+ */
+app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// Test database connection
+/**
+ * DB connectivity check
+ */
 app.get("/test-db", async (_req, res) => {
   try {
-    const result = await db.query('SELECT NOW() as now');
-    res.json({ 
+    const result = await db.query("SELECT NOW() as now");
+    res.json({
       status: "Database connection successful",
       timestamp: result.rows[0].now
     });
   } catch (error) {
-    console.error('Database connection error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    res.status(500).json({ 
+    console.error("Database connection error:", error);
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
+    res.status(500).json({
       status: "Database connection failed",
-      error: errorMessage
-    });
-  }
-});
-
-// Test SQL Query Endpoint
-app.get("/test-query", async (req, res) => {
-  const { query } = req.query;
-  
-  if (!query || typeof query !== 'string') {
-    return res.status(400).json({ 
-      status: "error",
-      message: "Query parameter 'query' is required and must be a string"
-    });
-  }
-
-  try {
-    console.log('Executing query:', query);
-    const result = await db.query(query);
-    
-    res.json({
-      status: "success",
-      rowCount: result.rowCount,
-      rows: result.rows
-    });
-  } catch (error) {
-    console.error('Query execution error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    res.status(500).json({ 
-      status: "error",
-      message: "Query execution failed",
       error: errorMessage
     });
   }

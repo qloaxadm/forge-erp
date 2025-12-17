@@ -30,3 +30,16 @@ db.on("error", (err) => {
   console.error("❌ PostgreSQL error", err);
   process.exit(1);
 });
+
+process.on("SIGTERM", async () => {
+  console.log("🛑 SIGTERM received. Closing DB pool...");
+  await db.end();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("🛑 SIGINT received. Closing DB pool...");
+  await db.end();
+  process.exit(0);
+});
+
