@@ -11,12 +11,13 @@ export function useMaterials() {
 
   useEffect(() => {
     apiFetch<Material[]>("/materials")
-      .then(data => {
-        if (data) {
-          setData(data);
-        }
+      .then((response) => {
+        setData(Array.isArray(response) ? response : []);
       })
-      .catch(e => setError(e.message))
+      .catch((e: Error) => {
+        setError(e.message);
+        setData([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
