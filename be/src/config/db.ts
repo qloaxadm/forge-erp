@@ -1,4 +1,6 @@
 import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import * as schema from "../types/db.types";
 import { env } from "./env";
 import fs from "fs";
 import path from "path";
@@ -10,36 +12,38 @@ const sslConfig = env.db.ssl
     }
   : false;
 
-export const db = new Pool({
+// Create the connection pool
+const pool = new Pool({
   host: env.db.host,
   port: env.db.port,
   database: env.db.name,
   user: env.db.user,
   password: env.db.password,
   ssl: sslConfig,
-  max: 20, // Connection pool size
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
-db.on("connect", () => {
+// Log connection events
+pool.on("connect", () => {
   console.log("✅ PostgreSQL connected (Aiven)");
 });
 
-db.on("error", (err) => {
+pool.on("error", (err: Error) => {
   console.error("❌ PostgreSQL error", err);
   process.exit(1);
 });
 
-process.on("SIGTERM", async () => {
-  console.log("🛑 SIGTERM received. Closing DB pool...");
-  await db.end();
+// Graceful shutdown
+const shutdown = async () => {
+  console.log("Shutting down database connection...");
+  await pool.end();
   process.exit(0);
-});
+};
 
-process.on("SIGINT", async () => {
-  console.log("🛑 SIGINT received. Closing DB pool...");
-  await db.end();
-  process.exit(0);
-});
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
 
+// Export the Drizzle instance with proper typing
+export const db = drizzle(pool, { schema });
