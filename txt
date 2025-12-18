@@ -1,0 +1,10 @@
+http://localhost:3000/inventory/stock/rm-ledger
+
+http://localhost:3000/inventory/materials
+
+http://localhost:3000/inventory/grn/create
+
+http://localhost:3000/inventory/production/create
+
+http://localhost:5000/api/grn
+
