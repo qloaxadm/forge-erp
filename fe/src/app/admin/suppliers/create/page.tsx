@@ -120,7 +120,7 @@ export default function CreateSupplier() {
       }
       
       // Log the error for debugging
-      console.error('Form submission error:', {
+      console.log('Form submission error:', {
         error: e,
         status: e.status,
         response: e.response,

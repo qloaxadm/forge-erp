@@ -130,7 +130,7 @@ export async function apiFetch<T = any>(
       }
     };
 
-    console.error('API Request Failed - Detailed Error:', errorInfo);
+    console.log('API Request Failed - Detailed Error:', errorInfo);
 
     // Create a more user-friendly error message
     let userFriendlyMessage = 'An unexpected error occurred';

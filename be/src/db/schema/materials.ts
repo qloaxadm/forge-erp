@@ -15,7 +15,8 @@ export const materials = pgTable("materials", {
 
   category_id: integer("category_id"),
   uom_id: integer("uom_id"),
-
+  min_stock: integer("min_stock").default(0),
+  
   is_active: boolean("is_active").default(true),
 
   created_at: timestamp("created_at").defaultNow(),

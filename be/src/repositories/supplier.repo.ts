@@ -1,85 +1,71 @@
 import { db } from "../config/db";
 import { CreateSupplierInput, UpdateSupplierInput } from "../validators/suppliers.schema";
-
+import { suppliers } from "../schemas/suppliers.schema";
+import { eq, asc } from "drizzle-orm";
 export const SupplierRepo = {
   async create(data: CreateSupplierInput) {
-    const { rows } = await db.query(
-      `INSERT INTO suppliers (
-        name, code, contact_person, email, phone, 
-        address, tax_number, payment_terms, currency, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *`,
-      [
-        data.name,
-        data.code,
-        data.contact_person || null,
-        data.email || null,
-        data.phone || null,
-        data.address || null,
-        data.tax_number || null,
-        data.payment_terms || null,
-        data.currency || 'USD',
-        data.is_active
-      ]
-    );
-    return rows[0];
+    const [supplier] = await db
+      .insert(suppliers)
+      .values({
+        name: data.name,
+        code: data.code,
+        contact_person: data.contact_person || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        tax_number: data.tax_number || null,
+        payment_terms: data.payment_terms || null,
+        currency: data.currency || 'USD',
+        is_active: data.is_active !== undefined ? data.is_active : true,
+      })
+      .returning();
+    
+    return supplier;
   },
 
   async findById(id: number) {
-    const { rows } = await db.query(
-      `SELECT * FROM suppliers WHERE id = $1`,
-      [id]
-    );
-    return rows[0];
+    const [supplier] = await db
+      .select()
+      .from(suppliers)
+      .where(eq(suppliers.id, id));
+    return supplier;
   },
 
   async findAll() {
-    const { rows } = await db.query(
-      `SELECT * FROM suppliers ORDER BY name`
-    );
-    return rows;
+    const result = await db
+      .select()
+      .from(suppliers)
+      .orderBy(asc(suppliers.name));
+    return result;
   },
 
   async update(id: number, data: UpdateSupplierInput) {
-    const updates: string[] = [];
-    const values: any[] = [id];
-    let paramCount = 1;
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined) {
-        updates.push(`${key} = $${++paramCount}`);
-        values.push(value);
-      }
-    });
-
-    if (updates.length === 0) {
-      return this.findById(id);
-    }
-
-    const { rows } = await db.query(
-      `UPDATE suppliers SET ${updates.join(', ')} 
-       WHERE id = $1 
-       RETURNING *`,
-      values
-    );
-
-    return rows[0];
+    const [supplier] = await db
+      .update(suppliers)
+      .set({
+        ...data,
+        updated_at: new Date()
+      })
+      .where(eq(suppliers.id, id))
+      .returning();
+    
+    return supplier;
   },
 
-// In supplier.repo.ts, update the delete method:
-async delete(id: number) {
-  const result = await db.query<{ id: number }>(
-    `DELETE FROM suppliers WHERE id = $1`,
-    [id]
-  );
-  return result.rowCount ? result.rowCount > 0 : false;
-},
+  async delete(id: number) {
+    const [deleted] = await db
+      .delete(suppliers)
+      .where(eq(suppliers.id, id))
+      .returning({ id: suppliers.id });
+    
+    return deleted !== undefined;
+  },
 
   async findByCode(code: string) {
-    const { rows } = await db.query(
-      `SELECT * FROM suppliers WHERE code = $1`,
-      [code]
-    );
-    return rows[0];
+    const [supplier] = await db
+      .select()
+      .from(suppliers)
+      .where(eq(suppliers.code, code));
+    return supplier;
   },
 };

@@ -1,6 +1,8 @@
 // pricing.controller.ts
 import { Request, Response } from "express";
 import { db } from "../config/db";
+import { and, eq, like } from "drizzle-orm";
+import { priceLists, priceListItems } from "../db/schema/price-lists";
 
 // GET /api/pricing/price-lists
 // src/controllers/pricing.controller.ts
@@ -10,32 +12,31 @@ export const getPriceLists = async (req: Request, res: Response) => {
     // Get query parameters for filtering
     const { name, currency, is_active, customer_type_id } = req.query;
 
-    let query = 'SELECT * FROM price_lists WHERE 1=1';
-    const queryParams = [];
-    let paramIndex = 1;
-
+    // Build conditions array based on query parameters
+    const conditions = [];
+    
     if (name) {
-      query += ` AND name ILIKE $${paramIndex++}`;
-      queryParams.push(`%${name}%`);
+      conditions.push(like(priceLists.name, `%${name}%`));
     }
     if (currency) {
-      query += ` AND currency = $${paramIndex++}`;
-      queryParams.push(currency);
+      conditions.push(eq(priceLists.currency, currency as string));
     }
     if (is_active !== undefined) {
-      query += ` AND is_active = $${paramIndex++}`;
-      queryParams.push(is_active === 'true');
+      conditions.push(eq(priceLists.is_active, is_active === 'true'));
     }
     if (customer_type_id) {
-      query += ` AND customer_type_id = $${paramIndex++}`;
-      queryParams.push(parseInt(customer_type_id as string));
+      conditions.push(eq(priceLists.customer_type_id, parseInt(customer_type_id as string)));
     }
-
-    const result = await db.query(query, queryParams);
+    
+    // Build and execute the query in a single chain
+    const result = await db
+      .select()
+      .from(priceLists)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
     
     res.status(200).json({
       success: true,
-      data: result.rows
+      data: result
     });
   } catch (error) {
     console.error("Error fetching price lists:", error);
@@ -51,7 +52,7 @@ export const getPriceLists = async (req: Request, res: Response) => {
 // Add to pricing.controller.ts
 export const addPriceListItem = async (req: Request, res: Response) => {
   try {
-    const { price_list_id, product_id, price, min_quantity = 1, is_active = true } = req.body;
+    const { price_list_id, product_id, price, min_quantity = 1 } = req.body;
     const { id } = req.params; // This gets the price list ID from the URL parameter
 
     if (!price_list_id || !product_id || price === undefined) {
@@ -61,17 +62,19 @@ export const addPriceListItem = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await db.query(
-      `INSERT INTO price_list_items 
-       (price_list_id, product_id, price, min_quantity, is_active)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [price_list_id, product_id, price, min_quantity, is_active]
-    );
+    const [newItem] = await db
+      .insert(priceListItems)
+      .values({
+        price_list_id,
+        product_id,
+        price,
+        min_quantity
+      })
+      .returning();
 
     res.status(201).json({
       success: true,
-      data: result.rows[0]
+      data: newItem
     });
   } catch (error) {
     console.error("Error adding price list item:", error);
@@ -104,17 +107,18 @@ export const createPriceList = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await db.query(
-      `INSERT INTO price_lists 
-       (name, is_active, customer_type_id)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [name, is_active, customer_type_id]
-    );
+    const [newPriceList] = await db.insert(priceLists)
+      .values({
+        name,
+        is_active,
+        customer_type_id,
+        currency: 'USD'  // Explicitly set currency
+      })
+      .returning();
 
     res.status(201).json({
       success: true,
-      data: result.rows[0]
+      data: newPriceList
     });
   } catch (error) {
     console.error("Error creating price list:", error);

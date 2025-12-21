@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
 type Supplier = {
   id: string;
@@ -18,118 +19,138 @@ export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSuppliers = async () => {
       try {
-        const data = await apiFetch<Supplier[]>('/suppliers');
+        const data = await apiFetch<Supplier[]>("/suppliers");
         setSuppliers(data);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load suppliers';
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load suppliers";
         setError(errorMessage);
-        console.error('Failed to fetch suppliers:', err);
+        console.error("Failed to fetch suppliers:", err);
       } finally {
         setIsLoading(false);
       }
     };
     fetchSuppliers();
   }, []);
- const handleDelete = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this supplier?')) return;
-  
-  try {
-    await apiFetch(`/suppliers/${id}`, { method: 'DELETE' });
-    
-    // Update the UI by filtering out the deleted supplier
-    setSuppliers(prevSuppliers => 
-      prevSuppliers.filter(supplier => supplier.id !== id)
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this supplier?")) return;
+
+    try {
+      await apiFetch(`/suppliers/${id}`, { method: "DELETE" });
+      setSuppliers((prev) => prev.filter((supplier) => supplier.id !== id));
+      alert("Supplier deleted successfully");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete supplier";
+      setError(errorMessage);
+      console.error("Failed to delete supplier:", err);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-gray-600">Loading suppliers...</div>
+      </div>
     );
-    
-    // Show success message
-    alert('Supplier deleted successfully');
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Failed to delete supplier';
-    setError(errorMessage);
-    console.error('Failed to delete supplier:', err);
   }
-};
+
+  if (error) {
+    return (
+      <div className="p-6 text-red-600">
+        <p>Error: {error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="h-screen px-20 bg-gray-50 dark:bg-gray-900 p-8">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
+        <div>
+          <h1 className="text-xl font-semibold text-white">Suppliers</h1>
+          <p className="text-sm text-gray-500">
+            Manage your raw material suppliers and their contact information.
+          </p>
+        </div>
+
         <Link
           href="/admin/suppliers/create"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+          className="inline-flex items-center gap-2 rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 transition"
         >
-          Add New Supplier
+          + New Supplier
         </Link>
       </div>
 
+      {/* Content */}
       {suppliers.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-600">No suppliers found. Add your first supplier!</p>
+        <div className="rounded-lg border bg-white p-8 text-center text-gray-500">
+          No suppliers found. Add your first supplier to get started.
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="border bg-white overflow-hidden rounded-lg">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  Contact
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Phone
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                   Address
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y">
               {suppliers.map((supplier) => (
                 <tr key={supplier.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">
                       {supplier.name}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">
-                      {supplier.email || '-'}
+                    <div className="mt-1 text-xs text-gray-500">
+                      Added {new Date(supplier.createdAt).toLocaleDateString()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     <div className="text-sm text-gray-600">
-                      {supplier.phone || '-'}
+                      {supplier.email || "No email"}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {supplier.phone || "No phone"}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-600 max-w-xs truncate">
-                      {supplier.address || '-'}
+                      {supplier.address || "No address"}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">
-                      {new Date(supplier.createdAt).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Link
-                      href={`/admin/suppliers/edit/${supplier.id}`}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  <td className="px-6 py-4 text-right text-sm font-medium">
+                    <button
+                      onClick={() =>
+                        router.push(`/admin/suppliers/${supplier.id}/edit`)
+                      }
+                      className="text-blue-600 hover:text-blue-900 mr-4"
                     >
                       Edit
-                    </Link>
+                    </button>
                     <button
                       onClick={() => handleDelete(supplier.id)}
                       className="text-red-600 hover:text-red-900"
@@ -141,6 +162,30 @@ export default function SuppliersPage() {
               ))}
             </tbody>
           </table>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between border-t bg-gray-50 px-6 py-3">
+            <span className="text-xs text-gray-500">
+              Showing {suppliers.length} of {suppliers.length} suppliers
+            </span>
+            <div className="flex space-x-2">
+              <button
+                disabled={true}
+                className="px-3 py-1 border rounded text-gray-400 cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button className="px-3 py-1 border rounded bg-red-500 text-white">
+                1
+              </button>
+              <button
+                disabled={true}
+                className="px-3 py-1 border rounded text-gray-400 cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

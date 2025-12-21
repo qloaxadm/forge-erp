@@ -1,12 +1,22 @@
 import { Router } from "express";
-import { createMaterial, getMaterials } from "../controllers/master.controller";
+import { 
+  createMaterial, 
+  getMaterials, 
+  getMaterialById, 
+  updateMaterial, 
+  deleteMaterial 
+} from "../controllers/master.controller";
 
 const router = Router();
 
-/* GET */
-router.get("/materials", getMaterials);
+// Material routes
+router.route("/materials")
+  .get(getMaterials)           // GET /api/materials
+  .post(createMaterial);       // POST /api/materials
 
-/* POST */
-router.post("/materials", createMaterial);
+router.route("/materials/:id")
+  .get(getMaterialById)        // GET /api/materials/:id
+  .patch(updateMaterial)       // PATCH /api/materials/:id
+  .delete(deleteMaterial);     // DELETE /api/materials/:id
 
 export default router;

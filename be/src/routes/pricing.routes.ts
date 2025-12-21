@@ -1,20 +1,13 @@
 // src/routes/pricing.routes.ts
-import { Router } from "express";
-import { 
-  createPriceList, 
-  addPriceListItem, 
-  getPriceLists 
-} from "../controllers/pricing.controller";
+import { Router } from 'express';
+import { getPriceLists, createPriceList } from '../controllers/pricing.controller';
 
 const router = Router();
 
-// GET /api/pricing/price-lists - Get all price lists (with optional query params)
-router.get("/price-lists", getPriceLists);
+// GET /api/pricing - Get all price lists
+router.get('/', getPriceLists);
 
-// POST /api/pricing/price-lists - Create a new price list
-router.post("/price-lists", createPriceList);
-
-// POST /api/pricing/lists/:id/items - Add item to price list
-router.post("/lists/:id/items", addPriceListItem);
+// POST /api/pricing - Create a new price list
+router.post('/', createPriceList);
 
 export default router;

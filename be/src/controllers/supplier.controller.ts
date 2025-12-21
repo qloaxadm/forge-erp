@@ -46,7 +46,7 @@ export const updateSupplier = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid supplier ID' });
+      return res.status(400).json({ error: 'Invalid supplier ID nn' });
     }
 
     const parsed = updateSupplierSchema.safeParse(req.body);

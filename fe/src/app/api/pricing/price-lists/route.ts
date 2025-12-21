@@ -52,8 +52,8 @@ export async function POST(request: Request) {
 
     // Make API call to backend
     console.log('Making request to backend API...');
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    const fullUrl = `${apiUrl}/pricing/price-lists`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const fullUrl = `${apiUrl}/pricing`;
     
     console.log('API URL:', fullUrl);
     
