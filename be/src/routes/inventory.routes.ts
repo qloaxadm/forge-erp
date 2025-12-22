@@ -5,7 +5,9 @@ import * as grnController from '../controllers/grn.controller';
 
 const router = Router();
 
-// Create a new GRN
+// GRN Routes
+// Current route in inventory.routes.ts
+router.get('/grn', grnController.getGRNs);
 router.post('/grn', grnController.createGRN);
 
 // Get Raw Material Ledger

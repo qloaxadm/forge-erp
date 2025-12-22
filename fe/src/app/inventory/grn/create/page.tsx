@@ -76,36 +76,36 @@ export default function CreateGRN() {
     }
 
     setSaving(true);
-    try {
-      const response = await fetch('/api/inventory/grn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplier_id: supplierId,
-          supplier_invoice_no: supplierInvoiceNo,
-          invoice_date: invoiceDate,
-          transport_cost: transportCost,
-          loading_cost: loadingCost,
-          misc_cost: miscCost,
-          items: items.map(item => ({
-            ...item,
-            quantity: Number(item.quantity),
-            unit_rate: Number(item.unit_rate),
-          })),
-        }),
-      });
+  try {
+  const response = await fetch('/api/inventory/grn', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    supplier_id: supplierId,
+    supplier_invoice_no: supplierInvoiceNo,
+    supplier_invoice_date: invoiceDate,
+    transport_cost: transportCost,
+    loading_cost: loadingCost,
+    misc_cost: miscCost,
+    items: items.map(item => ({
+      ...item,
+      quantity: Number(item.quantity),
+      unit_rate: Number(item.unit_rate),
+    })),
+  }),
+});
+
 
       if (!response.ok) {
-        throw new Error('Failed to create GRN');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create GRN');
       }
-
-      router.push('/inventory/stock/rm-ledger');
+      router.push('/inventory/grn');
     } catch (error) {
-      console.error('Error creating GRN:', error);
-      alert('Failed to create GRN');
-    } finally {
-      setSaving(false);
-    }
+  console.error('Error creating GRN:', error);
+  const errorMessage = error instanceof Error ? error.message : 'Failed to create GRN';
+  alert(errorMessage);
+}
   };
 
   return (
